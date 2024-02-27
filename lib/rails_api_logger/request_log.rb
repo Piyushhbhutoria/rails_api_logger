@@ -1,8 +1,8 @@
 class RequestLog < ActiveRecord::Base
   self.abstract_class = true
 
-  serialize :request_body, JSON
-  serialize :response_body, JSON
+  serialize :request_body, coder: JSON
+  serialize :response_body, coder: JSON
 
   belongs_to :loggable, optional: true, polymorphic: true
 
@@ -20,15 +20,18 @@ class RequestLog < ActiveRecord::Base
     rescue JSON::ParserError
       body
     end
-    create(
+    create_params = {
       path: request.path,
       request_body: body,
       method: request.method,
-      ip_used: request.remote_ip,
       request_headers: headers,
       started_at: Time.current,
       loggable: loggable,
-    )
+    }
+    if request.respond_to?(:remote_ip) && request.remote_ip.present?
+      create_params[:ip_used] = request.remote_ip
+    end
+    create(create_params)
   end
 
   def from_response(response, skip_body: false)

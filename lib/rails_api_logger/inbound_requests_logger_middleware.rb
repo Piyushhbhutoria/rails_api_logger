@@ -20,8 +20,10 @@ class InboundRequestsLoggerMiddleware
       updates = {
         response_code: status,
         ended_at: Time.current,
-        ip_used: request.remote_ip,
       }
+      if request.respond_to?(:remote_ip) && request.remote_ip.present?
+        updates[:ip_used] = request.remote_ip
+      end
       updates[:response_body] = parsed_body(body) if log_response_body?(env)
       # this usually works. let's be optimistic.
       begin
