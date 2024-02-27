@@ -142,6 +142,8 @@ If you want to skip logging the body of certain requests, you can pass a regular
 config.middleware.insert_before Rails::Rack::Logger, InboundRequestsLoggerMiddleware, skip_body_regexp: /api/letters/
 ```
 
+If you want to keep only a few headers, `keep_headers` option array allow you to select them.
+By default, only a few are saved. `nil` allow you to remove filers.
 
 In the implementation of your API, you can call any time `attach_inbound_request_loggable(model)`
 to attach an already persisted model to the log record.
