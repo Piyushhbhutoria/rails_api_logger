@@ -26,13 +26,6 @@ class InboundRequestsLoggerMiddleware
       end
       updates[:response_body] = parsed_body(body) if log_response_body?(env)
       env["INBOUND_REQUEST_LOG"].update!(updates)
-      # # this usually works. let's be optimistic.
-      # begin
-      #   env["INBOUND_REQUEST_LOG"].update!(updates)
-      # rescue JSON::GeneratorError => _e # this can be raised by activerecord if the string is not UTF-8.
-      #   env["INBOUND_REQUEST_LOG"].update!(updates.except(:response_body))
-      #   debugger
-      # end
       headers.merge!({ 'Request-Id' => env["INBOUND_REQUEST_LOG"].uuid })
     end
     [status, headers, body]
@@ -65,7 +58,11 @@ class InboundRequestsLoggerMiddleware
       to_utf8(body)
     end
   rescue JSON::ParserError, ArgumentError
-    to_utf8(body)
+    if body.instance_of?(String)
+      to_utf8(body)
+    else
+      body
+    end
   end
 
   def request_with_state_change?(request)

@@ -20,7 +20,7 @@ class RequestLog < ActiveRecord::Base
 
   def self.from_request(request, loggable: nil)
     request_body = (request.body.respond_to?(:read) ? request.body.read : request.body)
-    headers = request&.each_header&.to_h&.to_json || {}
+    headers = request&.each_header&.to_h { |k,v| [k, v.to_s] }&.to_json || {}
 
     switch_tenant(request)
 
