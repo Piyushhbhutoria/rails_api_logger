@@ -51,8 +51,8 @@ def database_setup
         t.string :method
         t.string :path
         t.text :request_body
-        t.text :response_body
         t.text :request_headers
+        t.text :response_body
         t.integer :response_code
         t.inet :ip_used
         t.timestamp :started_at
@@ -68,8 +68,8 @@ def database_setup
         t.string :method
         t.string :path
         t.text :request_body
-        t.text :response_body
         t.text :request_headers
+        t.text :response_body
         t.integer :response_code
         t.inet :ip_used
         t.timestamp :started_at

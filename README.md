@@ -1,3 +1,8 @@
+# Fork information
+
+This fork aims at merging all forks of renuo/rails_api_logger, adding uuid, ip_used and request_headers to the logged information,
+and hashing passwords before saving them.
+
 # Rails API Logger
 
 The simplest way to log API requests of your Rails application in your database.
@@ -13,11 +18,14 @@ technique multiple times successfully.
 
 This gem creates two database tables to log the following information:
 
+* **uuid** a generated uuid for the log
 * **path** the path/url invoked
 * **method** the method used to invoke the API (get, post, put, etc...)
 * **request_body** what was included in the request body
+* **request_headers** what was included in the request headers
 * **response_body** what was included in the response body 
 * **response_code** the HTTP response code of the request 
+* **ip_used** the remote IP
 * **started_at** when the request started
 * **ended_at** when the request finished
 

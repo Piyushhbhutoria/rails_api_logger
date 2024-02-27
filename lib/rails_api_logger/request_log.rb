@@ -33,8 +33,8 @@ class RequestLog < ActiveRecord::Base
     end
     create_params = {
       path: request.path,
-      request_body: body,
       method: request.method,
+      request_body: body,
       request_headers: headers,
       started_at: Time.current,
       loggable: loggable,
