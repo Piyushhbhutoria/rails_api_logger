@@ -32,6 +32,15 @@ class RequestLog < ActiveRecord::Base
     rescue JSON::ParserError
       body
     end
+
+    if request.respond_to?(:params) && request.params.present?
+      if body.present? && body.is_a?(Hash)
+        body = (body || {}).merge(request.params)
+      else
+        body = request.params
+      end
+    end
+
     create_params = {
       path: request.path,
       method: request.method,
