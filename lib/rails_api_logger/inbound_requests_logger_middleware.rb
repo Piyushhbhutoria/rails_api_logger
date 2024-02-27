@@ -1,18 +1,21 @@
 class InboundRequestsLoggerMiddleware
-  attr_accessor :only_state_change, :path_regexp, :skip_body_regexp
+  attr_accessor :only_state_change, :path_regexp, :skip_body_regexp, :keep_headers
 
-  def initialize(app, only_state_change: true, path_regexp: /.*/, skip_body_regexp: nil)
+  DEFAULT_HEADERS = %w[HTTP_USER_AGENT HTTP_REFERER HTTP_ACCEPT HTTP_ACCEPT_LANGUAGE HTTP_ACCEPT_ENCODING].freeze
+
+  def initialize(app, only_state_change: true, path_regexp: /.*/, skip_body_regexp: nil, keep_headers: DEFAULT_HEADERS)
     @app = app
     self.only_state_change = only_state_change
     self.path_regexp = path_regexp
     self.skip_body_regexp = skip_body_regexp
+    self.keep_headers = keep_headers
   end
 
   def call(env)
     request = ActionDispatch::Request.new(env)
     logging = log?(env, request)
     if logging
-      env["INBOUND_REQUEST_LOG"] = InboundRequestLog.from_request(request)
+      env["INBOUND_REQUEST_LOG"] = InboundRequestLog.from_request(request, keep_headers: keep_headers)
       request.body.rewind
     end
     status, headers, body = @app.call(env)
@@ -26,7 +29,9 @@ class InboundRequestsLoggerMiddleware
       end
       updates[:response_body] = parsed_body(body) if log_response_body?(env)
       env["INBOUND_REQUEST_LOG"].update!(updates)
-      headers.merge!({ 'Request-Id' => env["INBOUND_REQUEST_LOG"].uuid })
+      if !headers["action_dispatch.request_id"]
+        headers.merge!({ 'Request-Id' => env["INBOUND_REQUEST_LOG"].uuid })
+      end
     end
     [status, headers, body]
   end

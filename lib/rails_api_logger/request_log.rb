@@ -18,9 +18,10 @@ class RequestLog < ActiveRecord::Base
     self.uuid ||= SecureRandom.uuid
   end
 
-  def self.from_request(request, loggable: nil)
+  def self.from_request(request, loggable: nil, keep_headers: nil)
     request_body = (request.body.respond_to?(:read) ? request.body.read : request.body)
-    headers = request&.each_header&.to_h { |k,v| [k, v.to_s] }&.to_json || {}
+    headers_h = request&.each_header&.to_h { |k,v| [k, v.to_s] }
+    headers = headers_h&.filter { |k, v| !keep_headers || keep_headers.include?(k) }&.to_json || {}
 
     switch_tenant(request)
 
@@ -39,6 +40,9 @@ class RequestLog < ActiveRecord::Base
       started_at: Time.current,
       loggable: loggable,
     }
+    if headers["action_dispatch.request_id"]
+      create_params[:uuid] = headers["action_dispatch.request_id"]
+    end
     if request.respond_to?(:remote_ip) && request.remote_ip.present?
       create_params[:ip_used] = request.remote_ip
     end
