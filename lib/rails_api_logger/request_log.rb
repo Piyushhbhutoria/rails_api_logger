@@ -13,13 +13,22 @@ class RequestLog < ActiveRecord::Base
 
   def self.from_request(request, loggable: nil)
     request_body = (request.body.respond_to?(:read) ? request.body.read : request.body)
-    body = request_body&.dup&.force_encoding("UTF-8")
+    headers = request&.each_header&.to_h&.to_json || {}
+    body = request_body ? request_body.dup.force_encoding("UTF-8") : nil
     begin
       body = JSON.parse(body) if body.present?
     rescue JSON::ParserError
       body
     end
-    create(path: request.path, request_body: body, method: request.method, ip_used: request.remote_ip, started_at: Time.current, loggable: loggable)
+    create(
+      path: request.path,
+      request_body: body,
+      method: request.method,
+      ip_used: request.remote_ip,
+      request_headers: headers,
+      started_at: Time.current,
+      loggable: loggable,
+    )
   end
 
   def from_response(response, skip_body: false)
