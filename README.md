@@ -34,7 +34,7 @@ This gem creates two database tables to log the following information:
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rails_api_logger'
+gem 'rails_api_logger', github: 'Juleffel/rails_api_logger'
 ```
 
 And then execute:
