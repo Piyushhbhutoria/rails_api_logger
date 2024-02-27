@@ -47,6 +47,7 @@ def database_setup
   ActiveRecord::Schema.define do
     if !ActiveRecord::Base.connection.table_exists?(:inbound_request_logs)
       create_table :inbound_request_logs do |t|
+        t.text :uuid
         t.string :method
         t.string :path
         t.text :request_body
@@ -63,6 +64,7 @@ def database_setup
 
     if !ActiveRecord::Base.connection.table_exists?(:outbound_request_logs)
       create_table :outbound_request_logs do |t|
+        t.text :uuid
         t.string :method
         t.string :path
         t.text :request_body

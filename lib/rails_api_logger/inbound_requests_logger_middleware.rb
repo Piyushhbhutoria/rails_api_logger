@@ -25,12 +25,15 @@ class InboundRequestsLoggerMiddleware
         updates[:ip_used] = request.remote_ip
       end
       updates[:response_body] = parsed_body(body) if log_response_body?(env)
-      # this usually works. let's be optimistic.
-      begin
-        env["INBOUND_REQUEST_LOG"].update_columns(updates)
-      rescue JSON::GeneratorError => _e # this can be raised by activerecord if the string is not UTF-8.
-        env["INBOUND_REQUEST_LOG"].update_columns(updates.except(:response_body))
-      end
+      env["INBOUND_REQUEST_LOG"].update!(updates)
+      # # this usually works. let's be optimistic.
+      # begin
+      #   env["INBOUND_REQUEST_LOG"].update!(updates)
+      # rescue JSON::GeneratorError => _e # this can be raised by activerecord if the string is not UTF-8.
+      #   env["INBOUND_REQUEST_LOG"].update!(updates.except(:response_body))
+      #   debugger
+      # end
+      headers.merge!({ 'Request-Id' => env["INBOUND_REQUEST_LOG"].uuid })
     end
     [status, headers, body]
   end
@@ -45,18 +48,24 @@ class InboundRequestsLoggerMiddleware
     env["PATH_INFO"] =~ path_regexp && (!only_state_change || request_with_state_change?(request))
   end
 
+  def to_utf8(body)
+    body&.force_encoding('UTF-8')&.encode('UTF-8', invalid: :replace)
+  end
+
   def parsed_body(body)
     return unless body.present?
 
-    if body.respond_to?(:body)
-      JSON.parse(body.body)
+    if body.respond_to?(:body) && body.body.empty?
+      nil
+    elsif body.respond_to?(:body)
+      JSON.parse(to_utf8(body.body))
     elsif body.respond_to?(:[])
-      JSON.parse(body[0])
+      JSON.parse(to_utf8(body[0]))
     else
-      body
+      to_utf8(body)
     end
   rescue JSON::ParserError, ArgumentError
-    body
+    to_utf8(body)
   end
 
   def request_with_state_change?(request)

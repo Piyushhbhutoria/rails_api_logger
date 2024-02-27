@@ -10,11 +10,22 @@ class RequestLog < ActiveRecord::Base
 
   validates :method, presence: true
   validates :path, presence: true
+  validates :uuid, presence: true
+
+  before_validation :create_uuid
+
+  def create_uuid
+    self.uuid ||= SecureRandom.uuid
+  end
 
   def self.from_request(request, loggable: nil)
     request_body = (request.body.respond_to?(:read) ? request.body.read : request.body)
     headers = request&.each_header&.to_h&.to_json || {}
-    body = request_body ? request_body.dup.force_encoding("UTF-8") : nil
+
+    switch_tenant(request)
+
+    body = request_body ? request_body.dup.force_encoding('UTF-8').encode('UTF-8', invalid: :replace) : nil
+
     begin
       body = JSON.parse(body) if body.present?
     rescue JSON::ParserError
@@ -32,6 +43,18 @@ class RequestLog < ActiveRecord::Base
       create_params[:ip_used] = request.remote_ip
     end
     create(create_params)
+  end
+
+  def self.switch_tenant(request)
+    bearer_token = request&.each_header.to_h['HTTP_AUTHORIZATION']&.gsub('Bearer ', '')
+    return unless bearer_token
+
+    access_token = Doorkeeper::AccessToken.find_by(token: bearer_token)
+    resource_owner = User.find(access_token.resource_owner_id) unless access_token.expired?
+    tenant = resource_owner.current_tenant
+    tenant.switch!
+  rescue
+    Apartment::Tenant.switch! 'public'
   end
 
   def from_response(response, skip_body: false)
@@ -71,7 +94,7 @@ class RequestLog < ActiveRecord::Base
   private
 
   def manipulate_body(body)
-    body_duplicate = body&.dup&.force_encoding("UTF-8")
+    body_duplicate = body&.dup&.force_encoding("UTF-8")&.encode('UTF-8', invalid: :replace)
     begin
       body_duplicate = JSON.parse(body_duplicate) if body_duplicate.present?
     rescue JSON::ParserError
