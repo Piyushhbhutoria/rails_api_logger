@@ -30,7 +30,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "zeitwerk", ">= 2.0.0"
   spec.add_dependency "bcrypt"
 
-  spec.add_development_dependency "sqlite3", "~> 1.4.0"
   spec.add_development_dependency "pg", "~> 1.5.4"
   spec.add_development_dependency "standard", "~> 1.31"
   spec.add_development_dependency "rake", "~> 12.0"
